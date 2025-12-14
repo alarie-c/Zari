@@ -15,3 +15,11 @@
   - [x] Positions/Span
     - [x] Integration with source/file
 
+## Lexing
+
+- [ ] Operators
+- [x] Identifiers
+- [x] Digits
+- [ ] Strings
+- [x] Keywords
+- [x] Indentation

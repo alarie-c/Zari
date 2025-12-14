@@ -61,6 +61,7 @@ final class Lexer {
     internal func token() -> Token? {
         whitespace()
         var pos = Position(index, 1, x: x, y: y)
+        if get() == "\n" { return newline(&pos) }
         if Lexer.isSymbolStart(get()) { return symbol(&pos) }
         if Lexer.isDigitStart(get()) { return digit(&pos) }
         return op(&pos)
@@ -68,6 +69,54 @@ final class Lexer {
 
     internal func whitespace() {
         while get() == " " || get() == "\r" { move() }
+    }
+
+    internal func newline(_ pos: inout Position) -> Token {
+        // Make the newline token and update state
+        let token = Token(.eol, pos, indentLevel)
+        indentLevel = 0
+        move()
+
+        // Check if the indent mode has been set yet, and if not, set it
+        if indentMode == .unset {
+            // Try each mode and set accordingly without consuming
+            if get() == "\t" {
+                indentMode = .tabs
+            } else if get() == " " && get(1) == " " && get(2) == " " && get(3) == " " {
+                indentMode = .four
+            } else if get() == " " && get(1) == " " {
+                indentMode = .two
+            }
+
+            // Anything else is an actual token not an indentation,
+            // so return the newline and lex the next thing
+            else {
+                return token
+            }
+        }
+
+        // Now try to consume indents
+        switch indentMode {
+        case .unset: break  // unreachable
+        case .four:
+            while get() == " " && get(1) == " " && get(2) == " " && get(3) == " " {
+                indentLevel += 1
+                move(4)
+            }
+        case .two:
+            while get() == " " && get(1) == " " {
+                indentLevel += 1
+                move(2)
+            }
+        case .tabs:
+            while get() == "\t" {
+                indentLevel += 1
+                move()
+            }
+        }
+
+        // Now return the newline token
+        return token
     }
 
     internal func digit(_ pos: inout Position) -> Token {

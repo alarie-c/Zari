@@ -48,4 +48,44 @@ struct name {
         #expect(source.substring(b.pos) == "123.5")
         #expect(source.substring(c.pos) == "123")
     }
+
+    @Test func indents() async throws {
+        repeat {
+            let source = Source(fromString: "let main\n    4")
+            let lexer = Lexer(source)
+            let a = lexer.token()!
+            let b = lexer.token()!
+            let c = lexer.token()!
+            let d = lexer.token()!
+            print(a)
+            print(b)
+            print(c)
+            print(d)
+            #expect(a.kind == .kwLet)
+            #expect(b.kind == .litSymbol)
+            #expect(c.kind == .eol)
+            #expect(d.kind == .litInteger)
+            #expect(d.indent == 1)
+            #expect(lexer.index == source.data.endIndex)
+        } while(false)
+
+        repeat {
+            let source = Source(fromString: "let main\n  2")
+            let lexer = Lexer(source)
+            let a = lexer.token()!
+            let b = lexer.token()!
+            let c = lexer.token()!
+            let d = lexer.token()!
+            print(a)
+            print(b)
+            print(c)
+            print(d)
+            #expect(a.kind == .kwLet)
+            #expect(b.kind == .litSymbol)
+            #expect(c.kind == .eol)
+            #expect(d.kind == .litInteger)
+            #expect(d.indent == 1)
+            #expect(lexer.index == source.data.endIndex)
+        } while(false)
+    }
 }
