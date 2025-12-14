@@ -7,8 +7,8 @@ struct name {
         let source = Source(fromString: "+  ++ +=")
         let lexer = Lexer(source)
         #expect(lexer.token()!.kind == .plus)
-        #expect(lexer.token()!.kind == .plusPlus)
-        #expect(lexer.token()!.kind == .plusEq)
+        #expect(lexer.token()!.kind == .plusplus)
+        #expect(lexer.token()!.kind == .pluseq)
         #expect(lexer.index == source.data.endIndex)
     }
 
@@ -116,5 +116,15 @@ struct name {
             #expect(d.indent == 1)
             #expect(lexer.index == source.data.endIndex)
         } while(false)
+    }
+
+    @Test func fullFile() async throws {
+        let source = try Source(fromPath: "Tests/Test.zari")
+        let lexer = Lexer(source)
+
+        let tokens = lexer.lex()
+        for i in 0..<tokens.count { print("\(i): \(tokens[i])") }
+        #expect(lexer.index == source.data.endIndex)
+        #expect(lexer.indentMode == .four)
     }
 }

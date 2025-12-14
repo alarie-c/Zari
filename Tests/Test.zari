@@ -1,0 +1,8 @@
+let main() =
+    let mutable i = 0
+    
+    while i < 500 && let Some s get(i) do
+        i += s.count
+
+    if i == 0 do
+        print("Invalid state")

@@ -7,17 +7,17 @@
   - [ ] Preparing/writing a bytecode output
   - [x] Data fetch and format
 
-- [ ] Tokens
+- [x] Tokens
   - [x] Token Kinds
-    - [ ] Keywords
-    - [ ] Operators
+    - [x] Keywords
+    - [x] Operators
     - [x] Literals
   - [x] Positions/Span
     - [x] Integration with source/file
 
 ## Lexing
 
-- [ ] Operators
+- [x] Operators
 - [x] Identifiers
 - [x] Digits
 - [x] Strings
@@ -26,3 +26,4 @@
   - [x] Escape Sequences
 - [x] Keywords
 - [x] Indentation
+- [x] API

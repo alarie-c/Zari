@@ -17,9 +17,9 @@ final class Lexer {
     var indentMode = IndentMode.unset
     var indentLevel: Int = 0
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    // MARK: Internal Static Helpers
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    // MARK: Static Helpers
+    //
 
     /// List of characters that are allowed to follow an escape sequence
     private static let escapableCharacters: [Character] = ["c", "n", "r", "b", "\\", "\"", "0"]
@@ -33,9 +33,9 @@ final class Lexer {
         ch.isNumber || ch == "." || ch == "_"
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // MARK: Lexer API
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //
 
     ///
     init(_ source: Source) {
@@ -43,11 +43,28 @@ final class Lexer {
         self.index = source.data.startIndex
     }
 
-    public func lex() {}
+    public func lex() -> [Token] {
+        var tokens: [Token] = []
+        var eof = false
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+        while !eof {
+            print("Lexing: \(get())")
+            if let token = token() {
+                print("Got token: \(token)")
+                eof = token.kind == .eof
+                tokens.append(token)
+                print(token)
+            } else {
+                print("Got nil")
+            }
+        }
+
+        return tokens
+    }
+
+    //
     // MARK: Helpers
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //
 
     /// Returns the character at `k` places ahead of `index`.
     ///
@@ -81,25 +98,49 @@ final class Lexer {
         pos.extend(k - 1)
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //
     // MARK: Tokenizers
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //
 
     ///
     internal func token() -> Token? {
         whitespace()
+        print("Current: '\(get())'")
         var pos = Position(index, 1, x: x, y: y)
-        if get() == "\n" { return newline(&pos) }
-        if get() == "\"" && get(1) == "\"" && get(2) == "\"" { return rawString(&pos) }
-        if get() == "\"" { return string(&pos) }
+        
+        // End of file
+        if get() == "\0" as Character { return Token(.eof, pos, indentLevel) }
+        
+        // Newline
+        if get() == "\n" as Character || get() == "\r\n" {
+            print("Something?")
+            return newline(&pos)
+        }
+
+        // Raw string literal
+        if get()  == "\"" as Character &&
+           get(1) == "\"" as Character &&
+           get(2) == "\"" as Character
+        { return rawString(&pos) }
+
+        // String literal
+        if get() == "\"" as Character { return string(&pos) }
+        
+        // Symbol
         if Lexer.isSymbolStart(get()) { return symbol(&pos) }
+        
+        // Digit
         if Lexer.isDigitStart(get()) { return digit(&pos) }
+        
+        // Fallback to operator or nil
         return op(&pos)
     }
 
     internal func whitespace() { while get() == " " || get() == "\r" { move() } }
 
     internal func newline(_ pos: inout Position) -> Token {
+        print("into newline!")
+
         // Make the newline token and update state
         let token = Token(.eol, pos, indentLevel)
         indentLevel = 0
@@ -107,6 +148,7 @@ final class Lexer {
 
         // Check if the indent mode has been set yet, and if not, set it
         if indentMode == .unset {
+            print("unset indent")
             // Try each mode and set accordingly without consuming
             if get() == "\t" {
                 indentMode = .tabs
@@ -182,8 +224,8 @@ final class Lexer {
         while char != "\"" {
             // Look for escape sequences
             if char == "\\" {
-                /// Assumes get(1) == "\" and looks for a valid escape sequence,
-                /// otherwise will throw an error.
+                // Assumes get(1) == "\" and looks for a valid escape sequence,
+                // otherwise will throw an error.
                 if Lexer.escapableCharacters.contains(get(2)) {
                     // Consume backslash and the end call to move()
                     // will consume the the escaped character.
@@ -271,7 +313,7 @@ final class Lexer {
         move()
 
         // Look for keywords in the lexeme
-        let kind = Token.getKeyword(lexeme) ?? .litSymbol
+        let kind = Token.getReservedWord(lexeme) ?? .litSymbol
 
         // Return the final token
         return Token(kind, pos, indentLevel)
@@ -279,20 +321,169 @@ final class Lexer {
 
     internal func op(_ pos: inout Position) -> Token? {
         switch get() {
-        case ".":
+
+        //
+        // Grouping
+        //
+
+        case "(":
             move()
-            return Token(.dot, pos, indentLevel)
+            return Token(.lpar, pos, indentLevel)
+        case ")":
+            move()
+            return Token(.rpar, pos, indentLevel)
+        case "[":
+            move()
+            return Token(.lbrac, pos, indentLevel)
+        case "]":
+            move()
+            return Token(.rbrac, pos, indentLevel)
+        case "{":
+            move()
+            return Token(.lcurl, pos, indentLevel)
+        case "}":
+            move()
+            return Token(.rcurl, pos, indentLevel)
+
+        //
+        // Arithmetic
+        //
+
+        case "*":
+            if get(1) == "*" && get(2) == "=" {
+                move(3, extend: &pos)
+                return Token(.starstareq, pos, indentLevel)
+            } else if get(1) == "*" {
+                move(2, extend: &pos)
+                return Token(.starstar, pos, indentLevel)
+            } else if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.stareq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.star, pos, indentLevel)
+            }
+        case "/":
+            if get(1) == "/" && get(2) == "=" {
+                move(3, extend: &pos)
+                return Token(.slashslasheq, pos, indentLevel)
+            } else if get(1) == "*" {
+                move(2, extend: &pos)
+                return Token(.slashslash, pos, indentLevel)
+            } else if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.slasheq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.slash, pos, indentLevel)
+            }
         case "+":
             if get(1) == "=" {
                 move(2, extend: &pos)
-                return Token(.plusEq, pos, indentLevel)
+                return Token(.pluseq, pos, indentLevel)
             } else if get(1) == "+" {
                 move(2, extend: &pos)
-                return Token(.plusPlus, pos, indentLevel)
+                return Token(.plusplus, pos, indentLevel)
             } else {
                 move()
                 return Token(.plus, pos, indentLevel)
             }
+        case "-":
+            if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.minuseq, pos, indentLevel)
+            } else if get(1) == "-" {
+                move(2, extend: &pos)
+                return Token(.minusminus, pos, indentLevel)
+            } else if get(1) == ">" {
+                move(2, extend: &pos)
+                return Token(.arrow, pos, indentLevel)
+            } else {
+                move()
+                return Token(.minus, pos, indentLevel)
+            }
+        case "%":
+            if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.modeq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.mod, pos, indentLevel)
+            }
+
+        //
+        // Logical/Comparison
+        //
+
+        case "&":
+            if get(1) == "&" {
+                move(2, extend: &pos)
+                return Token(.andand, pos, indentLevel)
+            } else {
+                move()
+                return Token(.and, pos, indentLevel)
+            }
+        case "|":
+            if get(1) == "|" {
+                move(2, extend: &pos)
+                return Token(.barbar, pos, indentLevel)
+            } else {
+                move()
+                return Token(.bar, pos, indentLevel)
+            }
+        case "!":
+            if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.bangeq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.bang, pos, indentLevel)
+            }
+        case "=":
+            if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.eqeq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.eq, pos, indentLevel)
+            }
+        case ">":
+            if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.gteq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.gt, pos, indentLevel)
+            }
+        case "<":
+            if get(1) == "=" {
+                move(2, extend: &pos)
+                return Token(.lteq, pos, indentLevel)
+            } else {
+                move()
+                return Token(.lt, pos, indentLevel)
+            }
+
+        //
+        // Misc
+        //
+
+        case ".":
+            move()
+            return Token(.dot, pos, indentLevel)
+        case ",":
+            move()
+            return Token(.comma, pos, indentLevel)
+        case ":":
+            move()
+            return Token(.colon, pos, indentLevel)
+        case ";":
+            move()
+            return Token(.semicolon, pos, indentLevel)
+        case "?":
+            move()
+            return Token(.qmark, pos, indentLevel)
+
         default:
             move()
             return nil
