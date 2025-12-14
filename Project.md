@@ -11,7 +11,7 @@
   - [x] Token Kinds
     - [ ] Keywords
     - [ ] Operators
-    - [ ] Literals
+    - [x] Literals
   - [x] Positions/Span
     - [x] Integration with source/file
 
@@ -20,6 +20,9 @@
 - [ ] Operators
 - [x] Identifiers
 - [x] Digits
-- [ ] Strings
+- [x] Strings
+  - [x] Basic String Literals
+  - [x] Raw String Literals
+  - [x] Escape Sequences
 - [x] Keywords
 - [x] Indentation

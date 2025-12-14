@@ -4,7 +4,7 @@ struct Token {
         case lpar, rpar
         case plus, plusPlus, plusEq
         case dot
-        case litSymbol, litInteger, litFloat
+        case litSymbol, litInteger, litFloat, litString, litRawString
         case kwLet
     }
 

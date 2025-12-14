@@ -24,6 +24,35 @@ struct name {
         #expect(lexer.index == source.data.endIndex)
     }
 
+    @Test func strings() async throws {
+        let source = Source(fromString: "\"Hello, world!\\n\"")
+        let lexer = Lexer(source)
+        print(source.data)
+
+        let a = lexer.token()!
+        print(a)
+        #expect(a.kind == .litString)
+        #expect(lexer.index == source.data.endIndex)
+
+        let str = source.substring(a.pos)
+        #expect(str == "\"Hello, world!\\n\"")
+    }
+
+    @Test func rawStrings() async throws {
+        let text = "\"\"\"Hello, world!\n   I love Zari!\"\"\""
+        let source = Source(fromString: text)
+        let lexer = Lexer(source)
+        print(source.data)
+
+        let a = lexer.token()!
+        print(a)
+        #expect(a.kind == .litRawString)
+        #expect(lexer.index == source.data.endIndex)
+
+        let str = source.substring(a.pos)
+        print("'\(str)'")
+    }
+
     @Test func digits() async throws {
         let source = Source(fromString: "123 123.5 123.add")
         let lexer = Lexer(source)
