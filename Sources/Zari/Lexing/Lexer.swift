@@ -104,18 +104,17 @@ final class Lexer {
 
     ///
     internal func token() -> Token? {
-        whitespace()
-        print("Current: '\(get())'")
+        // Skip whitespace
+        while get() == " " { move() }
+
+        // Create a position beginning at this character
         var pos = Position(index, 1, x: x, y: y)
         
         // End of file
         if get() == "\0" as Character { return Token(.eof, pos, indentLevel) }
         
         // Newline
-        if get() == "\n" as Character || get() == "\r\n" {
-            print("Something?")
-            return newline(&pos)
-        }
+        if get() == "\n" { return newline(&pos) }
 
         // Raw string literal
         if get()  == "\"" as Character &&
@@ -136,14 +135,12 @@ final class Lexer {
         return op(&pos)
     }
 
-    internal func whitespace() { while get() == " " || get() == "\r" { move() } }
-
     internal func newline(_ pos: inout Position) -> Token {
-        print("into newline!")
-
         // Make the newline token and update state
         let token = Token(.eol, pos, indentLevel)
         indentLevel = 0
+        y += 1
+        x = 0
         move()
 
         // Check if the indent mode has been set yet, and if not, set it

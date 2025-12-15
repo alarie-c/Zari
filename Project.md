@@ -27,3 +27,21 @@
 - [x] Keywords
 - [x] Indentation
 - [x] API
+
+## Errors
+
+Model:
+
+```none
+Error: Unknown Identifier
+--> src/Main.zari:5:20
+  |
+5 | let index = str.find("hello")
+  |             ^~~
+Note: This identifier has not been defined yet.
+```
+
+- [x] Issues
+- [x] Levels
+- [ ] Error Accumulator
+- [x] Rendering
